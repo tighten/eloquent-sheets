@@ -2,26 +2,30 @@
 
 namespace Grosv\EloquentSheets;
 
+use Exception;
+use Google\Service\Sheets as GoogleSheets;
 use Google_Client;
-use Google_Service_Sheets;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use Revolution\Google\Sheets\Sheets;
+use Revolution\Google\Sheets\SheetsClient;
 use Sushi\Sushi;
 
 class SheetModel extends Model
 {
     use Sushi;
 
+    public $primaryKey = 'id';
+    public $cacheName;
+
     protected $rows = [];
     protected $sheetId;
     protected $spreadsheetId;
     protected $headerRow;
-    public $primaryKey = 'id';
-    public $cacheName;
-    private $cacheDirectory;
+
     protected $headers;
+
+    private $cacheDirectory;
 
     public function __construct()
     {
@@ -40,24 +44,24 @@ class SheetModel extends Model
 
     public function invalidateCache()
     {
-        if (! file_exists($this->cacheDirectory.'/'.config('sushi.cache-prefix', 'sushi').'-'.Str::kebab(str_replace('\\', '', static::class)).'.sqlite')) {
+        if (! file_exists($this->cacheDirectory . '/' . config('sushi.cache-prefix', 'sushi') . '-' . Str::kebab(str_replace('\\', '', static::class)) . '.sqlite')) {
             return;
         }
-        unlink($this->cacheDirectory.'/'.config('sushi.cache-prefix', 'sushi').'-'.Str::kebab(str_replace('\\', '', static::class)).'.sqlite');
+        unlink($this->cacheDirectory . '/' . config('sushi.cache-prefix', 'sushi') . '-' . Str::kebab(str_replace('\\', '', static::class)) . '.sqlite');
     }
 
     public function loadFromSheet(): ?array
     {
-        $sheets = new Sheets();
+        $sheets = new SheetsClient;
         $client = new Google_Client(config('google'));
-        $client->setScopes([Google_Service_Sheets::DRIVE, Google_Service_Sheets::SPREADSHEETS]);
-        $service = new \Google_Service_Sheets($client);
+        $client->setScopes([GoogleSheets::DRIVE, GoogleSheets::SPREADSHEETS]);
+        $service = new GoogleSheets($client);
         $sheets->setService($service);
         $inferId = 0;
 
         try {
             $sheet = $sheets->spreadsheet($this->spreadsheetId)->sheetById($this->sheetId)->get();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->invalidateCache();
             throw $e;
         }

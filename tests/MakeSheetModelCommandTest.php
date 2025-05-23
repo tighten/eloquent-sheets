@@ -3,10 +3,11 @@
 namespace Tests;
 
 use Illuminate\Support\Facades\File;
+use PHPUnit\Framework\Attributes\Test;
 
 class MakeSheetModelCommandTest extends TestCase
 {
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -16,7 +17,7 @@ class MakeSheetModelCommandTest extends TestCase
         config(['sushi.cache-path' => $this->cachePath = __DIR__.'/cache']);
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_a_sheet_model_without_committing_any_crimes()
     {
         $this->artisan('make:sheet-model')
